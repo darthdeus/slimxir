@@ -1,20 +1,18 @@
 defmodule Calliope.Tokenizer do
 
   @indent       ~S/(^[\t ]+)|(\/\s)|(\/\[\w+])/
-  @tag_class_id ~S/([%.#][-:\w]+)/
+  @tag_class_id ~S/^([.#]?[-:\w]+)/
   @keyword      ~S/[-:\w]+/
   @value        ~S/(?:(?:'.*?')|(?:".*?"))/
-  @hash_param   ~s/\\s*#{@keyword}:\\s*#{@value}\\s*/
-  @hash_params  ~s/({#{@hash_param}(?:,#{@hash_param})*?})/
   @html_param   ~s/\\s*#{@keyword}\\s*=\\s*#{@value}\\s*/
   @html_params  ~s/(\\(#{@html_param}(?:\\s#{@html_param})*?\\))/
   @rest         ~S/(.+)/
 
-  @regex        ~r/(?:#{@indent}|#{@tag_class_id}|#{@hash_params}|#{@html_params}|#{@rest})\s*/
+  @regex        ~r/(?:#{@indent}|#{@tag_class_id}|#{@html_params}|#{@rest})\s*/
 
 
-  def tokenize(haml) when is_binary(haml) do
-    Regex.split(~r/\n/, haml, trim: true) |> tokenize |> filter |> tokenize_identation |> index
+  def tokenize(input) when is_binary(input) do
+    Regex.split(~r/\n/, input, trim: true) |> tokenize |> filter |> tokenize_identation |> index
   end
 
   def tokenize([]), do: []
@@ -31,6 +29,8 @@ defmodule Calliope.Tokenizer do
   def reduce([]), do: []
   def reduce([h|t]) do
     [List.foldr(h, "", fn(x, acc) -> acc = x end) | reduce(t)]
+    #                                    ^
+    # TODO - check the assignment here ... it probably shouldn't be there
   end
 
   def tokenize_identation(list), do: tokenize_identation(list, compute_tabs(list))
